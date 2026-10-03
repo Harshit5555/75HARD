@@ -170,6 +170,28 @@
     renderReports();
     renderAttempts();
     if (ui.peekDay != null) renderPeek();
+    if (window.HardScene) window.HardScene.update(snapshot());
+  }
+
+  // Everything the 3D cover needs, recomputed on every render so resets and edits show up instantly.
+  function snapshot() {
+    const cur = currentDayNum();
+    const days = [];
+    for (let n = 1; n <= TOTAL_DAYS; n++) {
+      const day = state.days[n];
+      const p = dayProgress(day);
+      const status = isComplete(day) ? "done"
+        : n < cur ? "missed"
+        : n === cur ? "today"
+        : p.done > 0 ? "progress" : "future";
+      days.push({ n, status, pct: p.pct, date: fmt(dateOf(n), { weekday: "short", month: "short", day: "numeric" }) });
+    }
+    return {
+      current: cur,
+      streak: streak(),
+      days,
+      rewards: state.rewards.map((r) => ({ day: r.day, title: r.title, emoji: r.emoji, unlocked: rewardUnlocked(r) })),
+    };
   }
 
   function renderSidebar() {
@@ -277,8 +299,12 @@
   function renderHeader() {
     const cur = currentDayNum();
     $("#crumbDay").textContent = cur < 1 ? "Not started" : cur > TOTAL_DAYS ? "Complete" : `Day ${Math.min(cur, TOTAL_DAYS)}`;
-    $("#cover").innerHTML = photo(state.cover, "🌅", "", 3).replace('class="photo', 'style="position:absolute;inset:0" class="photo') +
-      `<button class="btn btn-sm cover-btn" data-action="change-cover">🖼️ Change cover</button>`;
+    $("#coverPhoto").innerHTML = photo(state.cover, "", "", 3);
+    $("#coverChip").innerHTML = cur < 1
+      ? `<b>Starts ${fmt(state.startDate)}</b><span>${1 - cur} days to go</span>`
+      : cur > TOTAL_DAYS
+        ? `<b>75 / 75</b><span>${streak() >= TOTAL_DAYS ? "Challenge complete 🏆" : "Challenge window over"}</span>`
+        : `<b>Day ${cur} <i>/ ${TOTAL_DAYS}</i></b><span>${completedCount()} complete · ${streak()} in a row</span>`;
 
     const nr = nextReward();
     $("#props").innerHTML = `
@@ -969,6 +995,30 @@
   // Re-render at midnight so "today" rolls over without a reload.
   let lastDay = todayISO();
   setInterval(() => { if (todayISO() !== lastDay) { lastDay = todayISO(); ui.calMonth = null; render(); } }, 60_000);
+
+  // Gentle 3D tilt on reward cards
+  document.addEventListener("pointermove", (e) => {
+    const card = e.target.closest?.(".reward");
+    document.querySelectorAll(".reward.tilting").forEach((c) => {
+      if (c !== card) { c.classList.remove("tilting"); c.style.transform = ""; }
+    });
+    if (!card || e.pointerType !== "mouse") return;
+    const b = card.getBoundingClientRect();
+    const x = (e.clientX - b.left) / b.width - 0.5;
+    const y = (e.clientY - b.top) / b.height - 0.5;
+    card.classList.add("tilting");
+    card.style.transform = `perspective(700px) rotateX(${(-y * 8).toFixed(2)}deg) rotateY(${(x * 10).toFixed(2)}deg) translateY(-3px)`;
+  });
+
+  // Hooks for scene.js
+  window.Hard75 = {
+    snapshot,
+    openDay(n) {
+      if (n < 1 || n > TOTAL_DAYS) return;
+      if (!state.days[n]) { createDay(n); render(); toast(`📄 Day ${n} created`); }
+      openPeek(n);
+    },
+  };
 
   render();
 })();

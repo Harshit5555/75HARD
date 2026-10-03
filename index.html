@@ -67,7 +67,14 @@
         <div class="crumbs">🔥 My 75 Hard <span class="muted">/</span> <span id="crumbDay"></span></div>
       </header>
 
-      <div class="cover" id="cover"></div>
+      <div class="cover" id="cover">
+        <div class="cover-photo" id="coverPhoto"></div>
+        <div class="cover-veil"></div>
+        <div class="scene3d" id="scene3d" aria-label="3D map of your 75 days"></div>
+        <div class="scene-tip" id="sceneTip"></div>
+        <div class="cover-chip" id="coverChip"></div>
+        <button class="btn btn-sm cover-btn" data-action="change-cover">🖼️ Change cover</button>
+      </div>
 
       <div class="page">
         <div class="page-icon">🔥</div>
@@ -120,6 +127,8 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="vendor/three.min.js"></script>
   <script src="app.js"></script>
+  <script src="scene.js"></script>
 </body>
 </html>

@@ -606,6 +606,20 @@
   }
   function closeModal() { $("#modalWrap").classList.remove("open"); ui.modal = null; }
 
+  // In-page confirmation (browser confirm() is blocked in some embeds)
+  function askConfirm(title, body, label, onYes) {
+    ui.modal = { type: "confirm", onYes };
+    openModal(`
+      <div class="modal-body">
+        <h3>${esc(title)}</h3>
+        <p class="muted">${esc(body)}</p>
+        <div class="modal-actions">
+          <button class="btn" data-action="close-modal">Cancel</button>
+          <button class="btn btn-primary" data-action="confirm-yes">${esc(label)}</button>
+        </div>
+      </div>`);
+  }
+
   // Reusable photo picker block (URL + upload + presets)
   function photoPicker(current, withPresets) {
     return `
@@ -821,7 +835,9 @@
         break;
       }
       case "delete-day":
-        if (confirm(`Delete Day ${n} and its tasks?`)) { delete state.days[n]; closePeek(); save(); render(); }
+        askConfirm(`Delete Day ${n}?`, "Its tasks, notes and photo will be removed.", "Delete day", () => {
+          delete state.days[n]; closePeek(); save(); render(); toast(`🗑 Day ${n} deleted`);
+        });
         break;
       case "day-photo": editPhoto("day", n); break;
       case "day-photo-clear": delete state.days[n].photo; save(); render(); break;
@@ -829,12 +845,20 @@
       case "edit-reward": editReward(el.dataset.id); break;
       case "new-report": editReport(null, n); closeMobileSidebar(); break;
       case "edit-report": editReport(el.dataset.id); closeMobileSidebar(); break;
-      case "delete-report":
-        if (confirm("Delete this progress report?")) {
-          state.reports = state.reports.filter((r) => r.id !== el.dataset.id);
-          save(); closeModal(); render();
-        }
+      case "delete-report": {
+        const id = el.dataset.id;
+        askConfirm("Delete this progress report?", "The report and its photo will be removed.", "Delete report", () => {
+          state.reports = state.reports.filter((r) => r.id !== id);
+          save(); render(); toast("🗑 Report deleted");
+        });
         break;
+      }
+      case "confirm-yes": {
+        const fn = ui.modal?.onYes;
+        closeModal();
+        if (fn) fn();
+        break;
+      }
       case "close-modal": closeModal(); break;
       case "export": exportData(); break;
     }

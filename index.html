@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>75 Hard Tracker</title>
+  <meta name="description" content="A Notion-style 75 Hard tracker with daily tasks, progress reports and milestone rewards." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="ws">
+        <span class="ws-icon">🔥</span>
+        <span class="ws-name">My 75 Hard</span>
+        <button class="icon-btn hide-desktop" data-action="toggle-sidebar" title="Close sidebar">«</button>
+      </div>
+
+      <nav class="nav">
+        <a href="#top" class="nav-item"><span>🏠</span> Home</a>
+        <a href="#today" class="nav-item"><span>☀️</span> Today</a>
+        <a href="#rewards" class="nav-item"><span>🎁</span> Rewards</a>
+        <a href="#board" class="nav-item"><span>🗂️</span> Days board</a>
+        <a href="#reports" class="nav-item"><span>📈</span> Progress reports</a>
+      </nav>
+
+      <!-- Calendar -->
+      <section class="sb-section" data-section="cal">
+        <button class="sb-head" data-action="toggle-section" data-key="calOpen">
+          <span class="caret">▸</span> 📅 Calendar
+        </button>
+        <div class="sb-body" id="calBody"></div>
+      </section>
+
+      <!-- Progress reports -->
+      <section class="sb-section" data-section="reports">
+        <button class="sb-head" data-action="toggle-section" data-key="reportsOpen">
+          <span class="caret">▸</span> 📈 Progress reports
+        </button>
+        <div class="sb-body" id="sbReports"></div>
+      </section>
+
+      <!-- Days -->
+      <section class="sb-section" data-section="days">
+        <button class="sb-head" data-action="toggle-section" data-key="daysOpen">
+          <span class="caret">▸</span> 🗓️ Days
+        </button>
+        <div class="sb-body" id="sbDays"></div>
+      </section>
+
+      <div class="sb-footer">
+        <button class="sb-link" data-action="export">⬇️ Export backup</button>
+        <label class="sb-link">⬆️ Import backup<input type="file" accept="application/json" id="importFile" hidden /></label>
+      </div>
+    </aside>
+    <div class="scrim" data-action="toggle-sidebar"></div>
+
+    <!-- ============ MAIN ============ -->
+    <main class="main" id="top">
+      <header class="topbar">
+        <button class="icon-btn" data-action="toggle-sidebar" title="Toggle sidebar">☰</button>
+        <div class="crumbs">🔥 My 75 Hard <span class="muted">/</span> <span id="crumbDay"></span></div>
+      </header>
+
+      <div class="cover" id="cover"></div>
+
+      <div class="page">
+        <div class="page-icon">🔥</div>
+        <h1 class="page-title">75 Hard</h1>
+        <div class="props" id="props"></div>
+
+        <div id="banner"></div>
+
+        <div class="callout">
+          <span class="callout-icon">💭</span>
+          <div><em>“The only way to fail is to stop.”</em> Six tasks, seventy-five days, zero compromises. Every 15 days earns a reward.</div>
+        </div>
+
+        <div class="stats" id="stats"></div>
+        <div class="journey" id="journey"></div>
+
+        <h2 class="h2" id="today">☀️ Today</h2>
+        <div id="todayBlock"></div>
+
+        <h2 class="h2" id="rewards">🎁 Rewards <span class="h2-sub">one every 15 days · unlocks when every day up to it is complete</span></h2>
+        <div class="rewards" id="rewardsGrid"></div>
+
+        <h2 class="h2" id="board">🗂️ Days board
+          <button class="btn btn-sm" data-action="new-day">＋ New day</button>
+        </h2>
+        <div class="board" id="boardCols"></div>
+
+        <h2 class="h2" id="reports">📈 Progress reports
+          <button class="btn btn-sm" data-action="new-report">＋ New report</button>
+        </h2>
+        <div class="gallery" id="reportsGrid"></div>
+
+        <h2 class="h2">🕰️ Past attempts</h2>
+        <div id="attempts"></div>
+
+        <footer class="page-foot">Saved automatically in this browser · Export a backup from the sidebar to move devices.</footer>
+      </div>
+    </main>
+
+    <!-- ============ SIDE PEEK (day page) ============ -->
+    <div class="peek-scrim" data-action="close-peek"></div>
+    <aside class="peek" id="peek" aria-hidden="true"></aside>
+  </div>
+
+  <!-- ============ MODAL ============ -->
+  <div class="modal-wrap" id="modalWrap">
+    <div class="modal-scrim" data-action="close-modal"></div>
+    <div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

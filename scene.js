@@ -1,7 +1,7 @@
 /* =========================================================
-   3D cover: your 75 days as a ring of glass beads.
-   Pink = complete, gold = in progress, rose-grey = missed,
-   frosted = still ahead. Floating gems mark the rewards and
+   3D cover: your 75 days as a ring of glass beads, in black
+   and white. Solid ink = complete, grey = in progress,
+   small dim bead = missed, frosted glass = still ahead. Floating gems mark the rewards and
    the centre arc fills with your streak. Click a bead to
    open that day. Fed by window.Hard75.snapshot().
    ========================================================= */
@@ -27,17 +27,17 @@
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(34, 2, 0.1, 100);
-  scene.fog = new THREE.Fog(0xffeef6, 16, 34);
+  scene.fog = new THREE.Fog(0xffffff, 16, 34);
 
   /* ---------- Lights ---------- */
-  scene.add(new THREE.HemisphereLight(0xfff3f8, 0xcfe0ff, 1.6));
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xbdbdbd, 1.6));
   const key = new THREE.DirectionalLight(0xffffff, 2.2);
   key.position.set(5, 9, 7);
   scene.add(key);
-  const rim = new THREE.DirectionalLight(0xc9b6ff, 1.2);
+  const rim = new THREE.DirectionalLight(0xffffff, 1.0);
   rim.position.set(-8, 2, -6);
   scene.add(rim);
-  const glow = new THREE.PointLight(0xff8cc6, 30, 18, 2);
+  const glow = new THREE.PointLight(0xffffff, 18, 18, 2);
   glow.position.set(0, 1.2, 0);
   scene.add(glow);
 
@@ -55,18 +55,48 @@
   // thin guide ring the beads sit on
   const guide = new THREE.Mesh(
     new THREE.TorusGeometry(R, 0.012, 8, 240),
-    new THREE.MeshBasicMaterial({ color: 0xe9a8c8, transparent: true, opacity: 0.45 })
+    new THREE.MeshBasicMaterial({ color: 0x9a9a9a, transparent: true, opacity: 0.4 })
   );
   guide.rotation.x = Math.PI / 2;
   world.add(guide);
 
-  const STYLE = {
-    done:     { color: 0xf06aa8, emissive: 0xff5fa8, ei: 0.45, opacity: 1,    rough: 0.18, scale: 1 },
-    progress: { color: 0xf7c66b, emissive: 0xf5a524, ei: 0.25, opacity: 1,    rough: 0.25, scale: 1 },
-    today:    { color: 0xffffff, emissive: 0xff9cc9, ei: 0.35, opacity: 1,    rough: 0.1,  scale: 1.35 },
-    missed:   { color: 0xc7aeb9, emissive: 0x000000, ei: 0,    opacity: 0.9,  rough: 0.7,  scale: 0.85 },
-    future:   { color: 0xffffff, emissive: 0xf3d9ff, ei: 0.08, opacity: 0.55, rough: 0.35, scale: 0.85 },
+  // Monochrome palettes: "ink" is black on the light page and white on the dark one.
+  const THEMES = {
+    light: {
+      fog: 0xffffff, guide: 0x9a9a9a, track: 0x000000, arc: 0x111111, halo: 0x111111,
+      orb: { color: 0xffffff, emissive: 0x000000, ei: 0, opacity: 0.85 },
+      gemOn: { color: 0x111111, emissive: 0x000000, ei: 0, metal: 0.6 },
+      gemOff: { color: 0xf2f2f2, opacity: 0.6 },
+      dust: [0x111111, 0x555555, 0x9a9a9a, 0xcccccc],
+      beads: {
+        done:     { color: 0x111111, emissive: 0x000000, ei: 0,    opacity: 1,    rough: 0.12, scale: 1 },
+        progress: { color: 0x7a7a7a, emissive: 0x000000, ei: 0,    opacity: 1,    rough: 0.2,  scale: 1 },
+        today:    { color: 0xffffff, emissive: 0x000000, ei: 0,    opacity: 1,    rough: 0.05, scale: 1.35 },
+        missed:   { color: 0xb5b5b5, emissive: 0x000000, ei: 0,    opacity: 0.8,  rough: 0.8,  scale: 0.6 },
+        future:   { color: 0xffffff, emissive: 0x000000, ei: 0,    opacity: 0.6,  rough: 0.3,  scale: 0.85 },
+      },
+    },
+    dark: {
+      fog: 0x0b0b0b, guide: 0x5a5a5a, track: 0xffffff, arc: 0xffffff, halo: 0xffffff,
+      orb: { color: 0x1a1a1a, emissive: 0x222222, ei: 0.4, opacity: 0.9 },
+      gemOn: { color: 0xffffff, emissive: 0xffffff, ei: 0.6, metal: 0 },
+      gemOff: { color: 0x3a3a3a, opacity: 0.7 },
+      dust: [0xffffff, 0xbdbdbd, 0x7a7a7a, 0x4a4a4a],
+      beads: {
+        done:     { color: 0xffffff, emissive: 0xffffff, ei: 0.55, opacity: 1,    rough: 0.12, scale: 1 },
+        progress: { color: 0x9a9a9a, emissive: 0x555555, ei: 0.2,  opacity: 1,    rough: 0.2,  scale: 1 },
+        today:    { color: 0x111111, emissive: 0x000000, ei: 0,    opacity: 1,    rough: 0.05, scale: 1.35 },
+        missed:   { color: 0x4a4a4a, emissive: 0x000000, ei: 0,    opacity: 0.8,  rough: 0.8,  scale: 0.6 },
+        future:   { color: 0x3a3a3a, emissive: 0x111111, ei: 0.2,  opacity: 0.55, rough: 0.3,  scale: 0.85 },
+      },
+    },
   };
+  const darkMQ = window.matchMedia("(prefers-color-scheme: dark)");
+  const isDark = () => {
+    const t = document.documentElement.getAttribute("data-theme");
+    return t ? t === "dark" : darkMQ.matches;
+  };
+  let T = isDark() ? THEMES.dark : THEMES.light;
 
   const beadGeo = new THREE.SphereGeometry(0.2, 32, 20);
   const beads = [];
@@ -85,7 +115,7 @@
   // halo for "today"
   const halo = new THREE.Mesh(
     new THREE.TorusGeometry(0.42, 0.025, 12, 64),
-    new THREE.MeshBasicMaterial({ color: 0xff6fb1, transparent: true, opacity: 0.9 })
+    new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.9 })
   );
   halo.visible = false;
   world.add(halo);
@@ -94,8 +124,8 @@
   const orb = new THREE.Mesh(
     new THREE.IcosahedronGeometry(0.95, 1),
     new THREE.MeshPhysicalMaterial({
-      color: 0xffc2de, emissive: 0xd76cff, emissiveIntensity: 0.18, roughness: 0.15,
-      clearcoat: 1, flatShading: true, transparent: true, opacity: 0.92,
+      color: 0xffffff, roughness: 0.1, metalness: 0.1,
+      clearcoat: 1, flatShading: true, transparent: true, opacity: 0.85,
     })
   );
   orb.position.y = 0.9;
@@ -103,13 +133,13 @@
 
   const track = new THREE.Mesh(
     new THREE.TorusGeometry(1.75, 0.05, 12, 160),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 })
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.12 })
   );
   track.position.y = 0.9;
   track.rotation.x = Math.PI / 2;
   world.add(track);
 
-  const arcMat = new THREE.MeshStandardMaterial({ color: 0xff5fa8, emissive: 0xff5fa8, emissiveIntensity: 0.8, roughness: 0.3 });
+  const arcMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3, metalness: 0.4 });
   let arc = null;
   let arcFrac = -1;
   function setArc(frac) {
@@ -125,19 +155,19 @@
   }
 
   // reward gems
-  const GEM_COLORS = [0x8ec5ff, 0xc7a4ff, 0x6fd6b4, 0xffb36b, 0xff7aa8];
   const gemGeo = new THREE.OctahedronGeometry(0.3, 0);
   let gems = [];
   function setGems(rewards) {
     gems.forEach((g) => { world.remove(g); g.material.dispose(); });
     gems = rewards.slice().sort((a, b) => a.day - b.day).map((r, i) => {
-      const c = GEM_COLORS[i % GEM_COLORS.length];
+      const on = T.gemOn, off = T.gemOff;
       const mat = new THREE.MeshPhysicalMaterial({
-        color: r.unlocked ? c : 0xf4eef2,
-        emissive: r.unlocked ? c : 0x000000,
-        emissiveIntensity: r.unlocked ? 0.55 : 0,
-        roughness: 0.12, clearcoat: 1, flatShading: true,
-        transparent: true, opacity: r.unlocked ? 1 : 0.7,
+        color: r.unlocked ? on.color : off.color,
+        emissive: r.unlocked ? on.emissive : 0x000000,
+        emissiveIntensity: r.unlocked ? on.ei : 0,
+        metalness: r.unlocked ? on.metal : 0,
+        roughness: 0.1, clearcoat: 1, flatShading: true,
+        transparent: true, opacity: r.unlocked ? 1 : off.opacity,
       });
       const g = new THREE.Mesh(gemGeo, mat);
       const p = beadPos(Math.max(1, Math.min(TOTAL, r.day)));
@@ -149,23 +179,29 @@
     });
   }
 
-  // floating pastel dust
+  // floating dust
   const DUST = 420;
   const dustGeo = new THREE.BufferGeometry();
   const dPos = new Float32Array(DUST * 3);
   const dCol = new Float32Array(DUST * 3);
-  const palette = [0xffb3d4, 0xd9c2ff, 0xbfe0ff, 0xffe2b3, 0xffffff].map((h) => new THREE.Color(h));
   for (let i = 0; i < DUST; i++) {
     dPos[i * 3] = (Math.random() - 0.5) * 26;
     dPos[i * 3 + 1] = (Math.random() - 0.5) * 12;
     dPos[i * 3 + 2] = (Math.random() - 0.5) * 18;
-    const c = palette[i % palette.length];
-    dCol.set([c.r, c.g, c.b], i * 3);
   }
+  function paintDust() {
+    const palette = T.dust.map((h) => new THREE.Color(h));
+    for (let i = 0; i < DUST; i++) {
+      const c = palette[i % palette.length];
+      dCol.set([c.r, c.g, c.b], i * 3);
+    }
+    if (dustGeo.attributes.color) dustGeo.attributes.color.needsUpdate = true;
+  }
+  paintDust();
   dustGeo.setAttribute("position", new THREE.BufferAttribute(dPos, 3));
   dustGeo.setAttribute("color", new THREE.BufferAttribute(dCol, 3));
   const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
-    size: 0.07, vertexColors: true, transparent: true, opacity: 0.85, depthWrite: false,
+    size: 0.05, vertexColors: true, transparent: true, opacity: 0.6, depthWrite: false,
   }));
   scene.add(dust);
 
@@ -175,7 +211,7 @@
     data = snap;
     snap.days.forEach((d) => {
       const m = beads[d.n - 1];
-      const st = STYLE[d.status];
+      const st = T.beads[d.status];
       m.material.color.setHex(st.color);
       m.material.emissive.setHex(st.emissive);
       m.material.emissiveIntensity = st.ei;
@@ -188,6 +224,7 @@
     halo.visible = !!today;
     if (today) halo.position.copy(today.position);
     setArc(snap.streak / TOTAL);
+    applyThemeColors();
     setGems(snap.rewards);
     if (reduceMotion) draw(0);
   }
@@ -214,7 +251,7 @@
   const ptr = new THREE.Vector2(9, 9);
   const look = { x: 0, y: 0 };
   let hovered = null;
-  const LABEL = { done: "💗 Complete", progress: "🟡 In progress", today: "☀️ Today", missed: "Missed", future: "Ahead" };
+  const LABEL = { done: "● Complete", progress: "◐ In progress", today: "Today", missed: "Missed", future: "Ahead" };
 
   function pick() {
     ray.setFromCamera(ptr, camera);
@@ -310,11 +347,27 @@
     draw(dt);
   }
 
-  // Dark mode tweaks
-  const dark = window.matchMedia("(prefers-color-scheme: dark)");
-  const applyTheme = () => { scene.fog.color.setHex(dark.matches ? 0x1d1820 : 0xffeef6); };
-  dark.addEventListener?.("change", applyTheme);
-  applyTheme();
+  // Theme: re-colour everything when light/dark changes
+  function applyThemeColors() {
+    scene.fog.color.setHex(T.fog);
+    guide.material.color.setHex(T.guide);
+    track.material.color.setHex(T.track);
+    arcMat.color.setHex(T.arc);
+    arcMat.emissive.setHex(T === THEMES.dark ? 0xffffff : 0x000000);
+    arcMat.emissiveIntensity = T === THEMES.dark ? 0.6 : 0;
+    halo.material.color.setHex(T.halo);
+    orb.material.color.setHex(T.orb.color);
+    orb.material.emissive.setHex(T.orb.emissive);
+    orb.material.emissiveIntensity = T.orb.ei;
+    orb.material.opacity = T.orb.opacity;
+  }
+  const retheme = () => {
+    T = isDark() ? THEMES.dark : THEMES.light;
+    paintDust();
+    if (data) update(data); else applyThemeColors();
+  };
+  darkMQ.addEventListener?.("change", retheme);
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
   window.HardScene = { update };
   resize();

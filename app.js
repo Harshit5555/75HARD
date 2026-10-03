@@ -10,34 +10,24 @@
   const STORE_KEY = "seventyFiveHard.v1";
   const TOTAL_DAYS = 75;
 
-  const U = (id, w = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
+  // Photos ship with the site (assets/photos) so they show everywhere, offline included.
+  const P = (name) => `assets/photos/${name}.jpg`;
 
   const PHOTOS = {
-    cover: U("photo-1476480862126-209bfaa8edc8", 1800),
-    book: U("photo-1512820790803-83ca734da794"),
-    piercing: U("photo-1535632066927-ab7c9ab60908"),
-    tattoo: U("photo-1565058379802-bbe93b2f703a"),
-    lulu: U("photo-1518611012118-696072aa579a"),
-    omakase: U("photo-1579871494447-9811cf80d66c"),
+    cover: P("cover"),
+    book: P("book"),
+    piercing: P("piercing"),
+    tattoo: P("tattoo"),
+    lulu: P("activewear"),
+    omakase: P("omakase"),
   };
 
-  // Rotating photos for day cards (fitness / wellness mood board)
-  const DAY_PHOTOS = [
-    U("photo-1534438327276-14e5300c3a48", 600),
-    U("photo-1544367567-0f2fcb009e0b", 600),
-    U("photo-1490645935967-10de6ba17061", 600),
-    U("photo-1548839140-29a749e1cf4d", 600),
-    U("photo-1507842217343-583bb7270b66", 600),
-    U("photo-1571019613454-1cb2f99b2d8b", 600),
-    U("photo-1506126613408-eca07ce68773", 600),
-    U("photo-1517836357463-d25dfeac3438", 600),
-  ];
+  // Rotating photos for day cards
+  const DAY_PHOTOS = Array.from({ length: 9 }, (_, i) => P(`day${i + 1}`));
 
   const PRESET_PHOTOS = [
-    PHOTOS.cover, U("photo-1506126613408-eca07ce68773", 1800), U("photo-1534438327276-14e5300c3a48", 1800),
-    U("photo-1544367567-0f2fcb009e0b", 1800), U("photo-1490645935967-10de6ba17061", 1800),
-    U("photo-1507842217343-583bb7270b66", 1800), U("photo-1571019613454-1cb2f99b2d8b", 1800),
-    U("photo-1517836357463-d25dfeac3438", 1800),
+    P("cover"), P("scene-studio"), P("scene-sunset"), P("scene-forest"),
+    P("day2"), P("day7"), P("day8"), P("day4"),
   ];
 
   const DEFAULT_TASKS = [
@@ -98,10 +88,22 @@
       if (raw) {
         const s = JSON.parse(raw);
         const base = freshState();
-        return { ...base, ...s, ui: { ...base.ui, ...(s.ui || {}) } };
+        const merged = { ...base, ...s, ui: { ...base.ui, ...(s.ui || {}) } };
+        return migratePhotos(merged);
       }
     } catch (e) { /* fall through to fresh */ }
     return freshState();
+  }
+
+  // Earlier versions pointed at Unsplash; swap those defaults for the bundled photos.
+  function migratePhotos(s) {
+    const old = (u) => typeof u === "string" && u.includes("images.unsplash.com");
+    if (old(s.cover)) s.cover = PHOTOS.cover;
+    s.rewards.forEach((r) => {
+      const def = DEFAULT_REWARDS.find((d) => d.id === r.id);
+      if (old(r.img) && def) r.img = def.img;
+    });
+    return s;
   }
 
   function save() {
@@ -149,7 +151,7 @@
   function statusTag(n) {
     const day = state.days[n];
     const cur = currentDayNum();
-    if (isComplete(day)) return `<span class="tag pink">💗 Complete</span>`;
+    if (isComplete(day)) return `<span class="tag pink">✓ Complete</span>`;
     if (n < cur) return `<span class="tag red">Missed</span>`;
     if (day && dayProgress(day).done > 0) return `<span class="tag yellow">In progress</span>`;
     if (n === cur) return `<span class="tag">Today</span>`;
@@ -221,7 +223,7 @@
       (nums.length
         ? nums.map((n) => `
           <button class="sb-row ${isComplete(state.days[n]) ? "done" : ""}" data-action="open-day" data-day="${n}">
-            <span>${isComplete(state.days[n]) ? "💗" : "📄"}</span>
+            <span>${isComplete(state.days[n]) ? "●" : "○"}</span>
             <span class="grow">Day ${n}</span>
             <span class="tiny">${fmt(dateOf(n))}</span>
           </button>`).join("")
@@ -278,8 +280,8 @@
           ${cells}
         </div>
         <div class="cal-legend">
-          <span><i style="background:var(--accent-soft)"></i>Done</span>
-          <span><i style="background:var(--red-soft)"></i>Missed</span>
+          <span><i style="background:var(--accent)"></i>Done</span>
+          <span><i style="background:var(--hatch);box-shadow:inset 0 0 0 1px var(--border)"></i>Missed</span>
           <span><i style="background:var(--bg-soft)"></i>75 days</span>
         </div>
         <dl class="cal-info">
@@ -451,9 +453,9 @@
   function renderBoard() {
     const nums = Object.keys(state.days).map(Number).sort((a, b) => b - a);
     const cols = [
-      { title: "Not started", dot: "⚪", list: nums.filter((n) => dayProgress(state.days[n]).done === 0) },
-      { title: "In progress", dot: "🟡", list: nums.filter((n) => { const p = dayProgress(state.days[n]); return p.done > 0 && p.done < p.total; }) },
-      { title: "Complete", dot: "💗", list: nums.filter((n) => isComplete(state.days[n])) },
+      { title: "Not started", dot: "○", list: nums.filter((n) => dayProgress(state.days[n]).done === 0) },
+      { title: "In progress", dot: "◐", list: nums.filter((n) => { const p = dayProgress(state.days[n]); return p.done > 0 && p.done < p.total; }) },
+      { title: "Complete", dot: "●", list: nums.filter((n) => isComplete(state.days[n])) },
     ];
     $("#boardCols").innerHTML = cols.map((c, i) => `
       <div class="col">
@@ -518,7 +520,7 @@
           <dt>📊 Progress</dt><dd style="display:flex;align-items:center;gap:10px"><div style="flex:1">${pbar(p.pct)}</div><span class="muted" style="font-size:13px">${p.done}/${p.total}</span></dd>
           ${reward ? `<dt>🎁 Reward</dt><dd>${reward.emoji} ${esc(reward.title)}</dd>` : ""}
         </dl>
-        ${isComplete(day) ? `<div class="complete-banner">💗 Day ${n} complete — every task done.${reward ? ` ${reward.emoji} ${esc(reward.title)} is ${rewardUnlocked(reward) ? "unlocked!" : "waiting on earlier days."}` : ""}</div>` : ""}
+        ${isComplete(day) ? `<div class="complete-banner">✓ Day ${n} complete — every task done.${reward ? ` ${reward.emoji} ${esc(reward.title)} is ${rewardUnlocked(reward) ? "unlocked!" : "waiting on earlier days."}` : ""}</div>` : ""}
         <div class="sub-h">Tasks</div>
         ${tasksHTML(n)}
         <div class="sub-h">Notes</div>
@@ -579,7 +581,7 @@
     if (!wasComplete && isComplete(day)) {
       const newly = state.rewards.filter((r) => rewardUnlocked(r) && !unlockedBefore.includes(r.id));
       confetti(newly.length ? 140 : 60);
-      toast(newly.length ? `🎁 Reward unlocked: ${newly[0].emoji} ${newly[0].title}!` : `💗 Day ${n} complete!`);
+      toast(newly.length ? `🎁 Reward unlocked: ${newly[0].emoji} ${newly[0].title}!` : `✓ Day ${n} complete`);
     }
   }
 
@@ -633,7 +635,7 @@
         <input type="hidden" name="imgData" value="">
       </div>
       ${withPresets ? `<div class="field"><span class="lbl">Or choose one</span><div class="presets">
-        ${PRESET_PHOTOS.map((u, i) => `<button type="button" class="photo g${(i % 5) + 1}" data-preset="${esc(u)}"><img src="${esc(u.replace("w=1800", "w=300"))}" alt="" loading="lazy" onerror="this.remove()"></button>`).join("")}
+        ${PRESET_PHOTOS.map((u, i) => `<button type="button" class="photo g${(i % 5) + 1}" data-preset="${esc(u)}"><img src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()"></button>`).join("")}
       </div></div>` : ""}`;
   }
 
@@ -981,7 +983,7 @@
         const s = JSON.parse(reader.result);
         if (!s.startDate || !s.days) throw new Error("bad file");
         const base = freshState();
-        state = { ...base, ...s, ui: { ...base.ui, ...(s.ui || {}) } };
+        state = migratePhotos({ ...base, ...s, ui: { ...base.ui, ...(s.ui || {}) } });
         ui.calMonth = null;
         save(); closePeek(); render();
         toast("✅ Backup imported");
@@ -1003,7 +1005,7 @@
 
   function confetti(count = 80) {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const colors = ["#f6a5c8", "#d6488f", "#ffd166", "#9ad1b6", "#a8c5f0", "#c9b6f2"];
+    const colors = ["#111111", "#ffffff", "#8a8a8a", "#d4d4d4", "#444444"];
     for (let i = 0; i < count; i++) {
       const p = document.createElement("div");
       p.className = "confetti";
